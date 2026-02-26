@@ -4,26 +4,42 @@ const axios = require('axios');
 const app = express();
 app.use(express.json());
 
+// Health check
 app.get('/webhook', (req, res) => {
   res.status(200).send("Webhook endpoint live");
 });
 
 app.post('/webhook', async (req, res) => {
 
-  const data = req.body;
+  const payload = req.body;
 
-  console.log("Webhook received:", JSON.stringify(data));
+  console.log("Webhook received:", JSON.stringify(payload));
 
-  if (!data.payment_status || data.payment_status !== "SUCCESS") {
-    return res.status(200).send("Webhook received");
+  // Check correct webhook type
+  if (payload.type !== "PAYMENT_FORM_ORDER_WEBHOOK") {
+    return res.status(200).send("Not a payment form event");
   }
 
-  const email = data.customer_details?.customer_email || "";
-  const phone = data.customer_details?.customer_phone || "";
-  const amount = data.order_amount || "";
+  const order = payload.data?.order;
 
-  const businessType =
-    data.order_meta?.["Which of these applies to you"] || "";
+  if (!order || order.order_status !== "PAID") {
+    return res.status(200).send("Order not paid");
+  }
+
+  const email = order.customer_details?.customer_email || "";
+  const phone = order.customer_details?.customer_phone || "";
+  const amount = order.order_amount || "";
+
+  // Extract Business Type from customer_fields array
+  let businessType = "";
+
+  const customerFields = order.customer_details?.customer_fields || [];
+
+  customerFields.forEach(field => {
+    if (field.title === "Which of these applies to you") {
+      businessType = field.value;
+    }
+  });
 
   try {
     await axios.post(
@@ -46,10 +62,10 @@ app.post('/webhook', async (req, res) => {
       }
     );
 
-    res.status(200).send("Payment processed");
+    res.status(200).send("Payment processed successfully");
 
   } catch (error) {
-    console.error(error.response?.data || error.message);
+    console.error("GHL Error:", error.response?.data || error.message);
     res.status(200).send("Error handled safely");
   }
 });
