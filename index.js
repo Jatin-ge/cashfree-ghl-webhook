@@ -1,43 +1,21 @@
 const express = require('express');
-const crypto = require('crypto');
 const axios = require('axios');
 
 const app = express();
 app.use(express.json());
 
-// Health check (for browser test)
 app.get('/webhook', (req, res) => {
   res.status(200).send("Webhook endpoint live");
 });
 
 app.post('/webhook', async (req, res) => {
 
-  const signature = req.headers['x-webhook-signature'];
-  const rawBody = JSON.stringify(req.body);
-
-  // If no secret or no signature (Cashfree test call), accept safely
-  if (!process.env.CASHFREE_SECRET || !signature) {
-    return res.status(200).send("Test webhook accepted");
-  }
-
-  try {
-    const generatedSignature = crypto
-      .createHmac('sha256', process.env.CASHFREE_SECRET)
-      .update(rawBody)
-      .digest('base64');
-
-    if (generatedSignature !== signature) {
-      return res.status(401).send("Invalid signature");
-    }
-  } catch (error) {
-    return res.status(200).send("Signature check skipped (test mode)");
-  }
-
   const data = req.body;
 
-  // If not a real payment success event, exit safely
+  console.log("Webhook received:", JSON.stringify(data));
+
   if (!data.payment_status || data.payment_status !== "SUCCESS") {
-    return res.status(200).send("Non-payment event received");
+    return res.status(200).send("Webhook received");
   }
 
   const email = data.customer_details?.customer_email || "";
@@ -68,7 +46,7 @@ app.post('/webhook', async (req, res) => {
       }
     );
 
-    res.status(200).send("Payment processed successfully");
+    res.status(200).send("Payment processed");
 
   } catch (error) {
     console.error(error.response?.data || error.message);
@@ -76,6 +54,5 @@ app.post('/webhook', async (req, res) => {
   }
 });
 
-// IMPORTANT: Use dynamic PORT for Render
 const PORT = process.env.PORT || 10000;
 app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
