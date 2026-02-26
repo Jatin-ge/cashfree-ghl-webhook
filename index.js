@@ -24,7 +24,7 @@ app.post('/webhook', async (req, res) => {
   }
 
   // =========================
-  // BASIC CUSTOMER INFO
+  // CUSTOMER BASIC INFO
   // =========================
 
   const email = order.customer_details?.customer_email || "";
@@ -37,7 +37,7 @@ app.post('/webhook', async (req, res) => {
   const lastName = nameParts.slice(1).join(" ") || "";
 
   // =========================
-  // BUSINESS TYPE FIELD
+  // BUSINESS TYPE EXTRACTION
   // =========================
 
   let businessType = "";
@@ -51,7 +51,7 @@ app.post('/webhook', async (req, res) => {
   });
 
   // =========================
-  // PRODUCT DETECTION LOGIC
+  // PRODUCT DETECTION
   // =========================
 
   const amountDetails = order.amount_details || [];
@@ -79,7 +79,7 @@ app.post('/webhook', async (req, res) => {
   });
 
   // =========================
-  // FINAL TAGS
+  // FINAL TAG LIST
   // =========================
 
   const finalTags = [
@@ -108,7 +108,7 @@ app.post('/webhook', async (req, res) => {
             value: amount
           },
           {
-            id: "purchased_products",
+            id: "products_purchased",   // ✅ Corrected Field Name
             value: purchasedProducts.join(", ")
           }
         ]
