@@ -8,6 +8,10 @@ app.use(express.json());
 const CASHFREE_SECRET = process.env.CASHFREE_SECRET;
 const GHL_API_KEY = process.env.GHL_API_KEY;
 
+app.get('/webhook', (req, res) => {
+  res.status(200).send("Webhook endpoint live");
+});
+
 app.post('/webhook', async (req, res) => {
 
   const signature = req.headers['x-webhook-signature'];
