@@ -27,6 +27,13 @@ app.post('/webhook', async (req, res) => {
   const phone = order.customer_details?.customer_phone || "";
   const amount = order.order_amount || "";
 
+  const fullName = order.customer_details?.customer_name || "";
+
+  // Split name safely
+  const nameParts = fullName.trim().split(" ");
+  const firstName = nameParts[0] || "";
+  const lastName = nameParts.slice(1).join(" ") || "";
+
   let businessType = "";
 
   const customerFields = order.customer_details?.customer_fields || [];
@@ -39,11 +46,13 @@ app.post('/webhook', async (req, res) => {
 
   try {
     await axios.post(
-      "https://services.leadconnectorhq.com/contacts/",
+      "https://services.leadconnectorhq.com/contacts/upsert",
       {
         locationId: process.env.LOCATION_ID,
         email: email,
         phone: phone,
+        firstName: firstName,
+        lastName: lastName,
         tags: ["cashfree_payment_success"],
         customFields: [
           {
@@ -66,6 +75,7 @@ app.post('/webhook', async (req, res) => {
     );
 
     console.log("Contact pushed to GHL successfully");
+
     res.status(200).send("Payment processed");
 
   } catch (error) {
