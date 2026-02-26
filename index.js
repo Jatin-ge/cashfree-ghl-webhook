@@ -11,11 +11,10 @@ app.get('/webhook', (req, res) => {
 app.post('/webhook', async (req, res) => {
 
   const payload = req.body;
-
   console.log("Webhook received:", JSON.stringify(payload));
 
   if (payload.type !== "PAYMENT_FORM_ORDER_WEBHOOK") {
-    return res.status(200).send("Not a payment form event");
+    return res.status(200).send("Not payment form event");
   }
 
   const order = payload.data?.order;
@@ -40,27 +39,34 @@ app.post('/webhook', async (req, res) => {
 
   try {
     await axios.post(
-      "https://rest.gohighlevel.com/v1/contacts/",
+      "https://services.leadconnectorhq.com/contacts/",
       {
+        locationId: process.env.LOCATION_ID,
         email: email,
         phone: phone,
         tags: ["cashfree_payment_success"],
-        customField: [
-          { key: "business_type", field_value: businessType },
-          { key: "order_amount", field_value: amount }
+        customFields: [
+          {
+            id: "business_type",
+            value: businessType
+          },
+          {
+            id: "order_amount",
+            value: amount
+          }
         ]
       },
       {
         headers: {
           Authorization: `Bearer ${process.env.GHL_API_KEY}`,
+          Version: "2021-07-28",
           "Content-Type": "application/json"
         }
       }
     );
 
     console.log("Contact pushed to GHL successfully");
-
-    res.status(200).send("Payment processed successfully");
+    res.status(200).send("Payment processed");
 
   } catch (error) {
     console.error("GHL Error:", error.response?.data || error.message);
