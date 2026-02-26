@@ -4,7 +4,6 @@ const axios = require('axios');
 const app = express();
 app.use(express.json());
 
-// Health check route
 app.get('/webhook', (req, res) => {
   res.status(200).send("Webhook endpoint live");
 });
@@ -15,7 +14,6 @@ app.post('/webhook', async (req, res) => {
 
   console.log("Webhook received:", JSON.stringify(payload));
 
-  // Make sure this is Payment Form webhook
   if (payload.type !== "PAYMENT_FORM_ORDER_WEBHOOK") {
     return res.status(200).send("Not a payment form event");
   }
@@ -30,7 +28,6 @@ app.post('/webhook', async (req, res) => {
   const phone = order.customer_details?.customer_phone || "";
   const amount = order.order_amount || "";
 
-  // Extract Business Type from customer_fields array
   let businessType = "";
 
   const customerFields = order.customer_details?.customer_fields || [];
@@ -43,22 +40,20 @@ app.post('/webhook', async (req, res) => {
 
   try {
     await axios.post(
-      "https://services.leadconnectorhq.com/contacts/",
+      "https://rest.gohighlevel.com/v1/contacts/",
       {
         email: email,
         phone: phone,
         tags: ["cashfree_payment_success"],
-        customFields: {
-          business_type: businessType,
-          order_amount: amount
-        }
+        customField: [
+          { key: "business_type", field_value: businessType },
+          { key: "order_amount", field_value: amount }
+        ]
       },
       {
         headers: {
           Authorization: `Bearer ${process.env.GHL_API_KEY}`,
-          "Content-Type": "application/json",
-          Version: "2021-07-28",
-          "Location-Id": process.env.LOCATION_ID
+          "Content-Type": "application/json"
         }
       }
     );
