@@ -1,0 +1,13 @@
+{
+  "name": "cashfree-ghl-webhook",
+  "version": "1.0.0",
+  "description": "Cashfree to GHL webhook bridge",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js"
+  },
+  "dependencies": {
+    "axios": "^1.4.0",
+    "express": "^4.18.2"
+  }
+}
