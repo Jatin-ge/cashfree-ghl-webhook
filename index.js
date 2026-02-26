@@ -4,7 +4,7 @@ const axios = require('axios');
 const app = express();
 app.use(express.json());
 
-// Health check
+// Health check route
 app.get('/webhook', (req, res) => {
   res.status(200).send("Webhook endpoint live");
 });
@@ -15,7 +15,7 @@ app.post('/webhook', async (req, res) => {
 
   console.log("Webhook received:", JSON.stringify(payload));
 
-  // Check correct webhook type
+  // Make sure this is Payment Form webhook
   if (payload.type !== "PAYMENT_FORM_ORDER_WEBHOOK") {
     return res.status(200).send("Not a payment form event");
   }
@@ -57,10 +57,13 @@ app.post('/webhook', async (req, res) => {
         headers: {
           Authorization: `Bearer ${process.env.GHL_API_KEY}`,
           "Content-Type": "application/json",
-          Version: "2021-07-28"
+          Version: "2021-07-28",
+          "Location-Id": process.env.LOCATION_ID
         }
       }
     );
+
+    console.log("Contact pushed to GHL successfully");
 
     res.status(200).send("Payment processed successfully");
 
