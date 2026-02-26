@@ -23,16 +23,22 @@ app.post('/webhook', async (req, res) => {
     return res.status(200).send("Order not paid");
   }
 
+  // =========================
+  // BASIC CUSTOMER INFO
+  // =========================
+
   const email = order.customer_details?.customer_email || "";
   const phone = order.customer_details?.customer_phone || "";
   const amount = order.order_amount || "";
-
   const fullName = order.customer_details?.customer_name || "";
 
-  // Split name safely
   const nameParts = fullName.trim().split(" ");
   const firstName = nameParts[0] || "";
   const lastName = nameParts.slice(1).join(" ") || "";
+
+  // =========================
+  // BUSINESS TYPE FIELD
+  // =========================
 
   let businessType = "";
 
@@ -44,7 +50,45 @@ app.post('/webhook', async (req, res) => {
     }
   });
 
+  // =========================
+  // PRODUCT DETECTION LOGIC
+  // =========================
+
+  const amountDetails = order.amount_details || [];
+  let purchasedProducts = [];
+  let productTags = [];
+
+  amountDetails.forEach(item => {
+    const value = parseFloat(item.value);
+
+    if (value > 0) {
+      purchasedProducts.push(item.title);
+
+      if (item.title.includes("Top 5 Winning D2C Brand Funnel Breakdown")) {
+        productTags.push("product_funnel_breakdown");
+      }
+
+      if (item.title.includes("Advanced D2C Growth Kit")) {
+        productTags.push("product_growth_kit");
+      }
+
+      if (item.title.includes("Personalized D2C Growth Audit")) {
+        productTags.push("product_growth_audit");
+      }
+    }
+  });
+
+  // =========================
+  // FINAL TAGS
+  // =========================
+
+  const finalTags = [
+    "cashfree_payment_success",
+    ...productTags
+  ];
+
   try {
+
     await axios.post(
       "https://services.leadconnectorhq.com/contacts/upsert",
       {
@@ -53,7 +97,7 @@ app.post('/webhook', async (req, res) => {
         phone: phone,
         firstName: firstName,
         lastName: lastName,
-        tags: ["cashfree_payment_success"],
+        tags: finalTags,
         customFields: [
           {
             id: "business_type",
@@ -62,6 +106,10 @@ app.post('/webhook', async (req, res) => {
           {
             id: "order_amount",
             value: amount
+          },
+          {
+            id: "purchased_products",
+            value: purchasedProducts.join(", ")
           }
         ]
       },
