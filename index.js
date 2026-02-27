@@ -41,12 +41,25 @@ app.post('/webhook', async (req, res) => {
   // =========================
 
   let businessType = "";
+  let businessTag = "";
 
   const customerFields = order.customer_details?.customer_fields || [];
 
   customerFields.forEach(field => {
     if (field.title === "Which of these applies to you") {
       businessType = field.value;
+
+      if (businessType.includes("Ecommerce")) {
+        businessTag = "segment_ecommerce";
+      }
+
+      if (businessType.includes("Agency")) {
+        businessTag = "segment_agency";
+      }
+
+      if (businessType.includes("Freelancer")) {
+        businessTag = "segment_freelancer";
+      }
     }
   });
 
@@ -84,8 +97,9 @@ app.post('/webhook', async (req, res) => {
 
   const finalTags = [
     "cashfree_payment_success",
+    businessTag,
     ...productTags
-  ];
+  ].filter(Boolean);
 
   try {
 
@@ -108,7 +122,7 @@ app.post('/webhook', async (req, res) => {
             value: amount
           },
           {
-            id: "products_purchased",   // ✅ Corrected Field Name
+            id: "products_purchased",
             value: purchasedProducts.join(", ")
           }
         ]
